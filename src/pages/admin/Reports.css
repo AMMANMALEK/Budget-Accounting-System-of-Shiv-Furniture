@@ -1,0 +1,42 @@
+.report-table {
+    font-size: var(--font-size-sm);
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-success {
+    color: var(--color-success);
+}
+
+.text-danger {
+    color: var(--color-danger);
+}
+
+.font-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+.percent-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.percent-badge.over {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.totals-row {
+    background: var(--color-bg);
+    border-top: 2px solid var(--color-border);
+}
+
+.totals-row td {
+    padding: var(--spacing-lg) var(--spacing-md);
+}

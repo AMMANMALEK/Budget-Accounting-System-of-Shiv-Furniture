@@ -1,0 +1,25 @@
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: var(--spacing-2xl);
+    background: var(--color-bg);
+    min-height: 100vh;
+}
+
+.admin-content-container {
+    max-width: var(--max-width-container);
+    margin: 0 auto;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .admin-main {
+        margin-left: 0;
+        padding: var(--spacing-lg);
+    }
+}

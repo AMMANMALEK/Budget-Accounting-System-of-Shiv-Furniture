@@ -1,0 +1,117 @@
+.page {
+    animation: fadeIn var(--transition-base);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-2xl);
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.page-header h1 {
+    margin-bottom: var(--spacing-xs);
+}
+
+.page-header p {
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.form-card {
+    margin-bottom: var(--spacing-xl);
+}
+
+.form-card h3 {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.font-medium {
+    font-weight: var(--font-weight-medium);
+}
+
+.text-secondary {
+    color: var(--color-text-secondary);
+}
+
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.icon-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.icon-btn.danger {
+    color: hsl(0, 84%, 60%);
+    border-color: hsl(0, 84%, 60%);
+    background-color: hsla(0, 84%, 60%, 0.1);
+}
+
+.icon-btn.danger:hover {
+    background-color: hsl(0, 84%, 60%);
+    border-color: hsl(0, 84%, 60%);
+    color: white;
+}
+
+.icon-btn.success {
+    color: hsl(142, 71%, 45%);
+    border-color: hsl(142, 71%, 45%);
+    background-color: hsla(142, 71%, 45%, 0.1);
+}
+
+.icon-btn.success:hover {
+    background-color: hsl(142, 71%, 45%);
+    border-color: hsl(142, 71%, 45%);
+    color: white;
+}
+
+.icon-btn.text-btn {
+    width: auto;
+    padding: 0 var(--spacing-sm);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
