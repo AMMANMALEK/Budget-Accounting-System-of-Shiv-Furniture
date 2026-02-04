@@ -11,18 +11,24 @@ export const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('admin');
+    const [error, setError] = useState('');
     const { signup } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        signup(name, email, password, role);
+        setError('');
+        try {
+            const user = await signup(name, email, password, role);
 
-        // Redirect based on role
-        if (role === 'admin') {
-            navigate('/admin/dashboard');
-        } else {
-            navigate('/portal/dashboard');
+            // Redirect based on role
+            if (user.role === 'admin') {
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/portal/dashboard');
+            }
+        } catch (err) {
+            setError(err.message || 'Signup failed. Please try again.');
         }
     };
 
@@ -38,6 +44,8 @@ export const Signup = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
+                    {error && <div className="auth-error-message" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+
                     <Input
                         label="Full Name"
                         type="text"

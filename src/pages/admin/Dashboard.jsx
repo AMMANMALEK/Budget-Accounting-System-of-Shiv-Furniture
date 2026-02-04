@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -14,7 +15,12 @@ import { TrendingUp, TrendingDown, IndianRupee, Wallet } from 'lucide-react';
 import './Dashboard.css';
 
 export const AdminDashboard = () => {
+    const [mounted, setMounted] = useState(false);
     const { getTotalSummary, getBudgetSummary } = useMockData();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const totals = getTotalSummary();
     const summary = getBudgetSummary();
 
@@ -78,29 +84,31 @@ export const AdminDashboard = () => {
             <div className="dashboard-content">
                 <Card title="Financial Overview">
                     <div style={{ width: '100%', height: 350 }}>
-                        <ResponsiveContainer>
-                            <BarChart
-                                data={chartData}
-                                margin={{
-                                    top: 20,
-                                    right: 30,
-                                    left: 20,
-                                    bottom: 5,
-                                }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip
-                                    formatter={(value) => `₹${value.toLocaleString()}`}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Legend />
-                                <Bar dataKey="Budget" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Spent" fill="var(--color-danger)" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="Revenue" fill="var(--color-success)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {mounted && (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    data={chartData}
+                                    margin={{
+                                        top: 20,
+                                        right: 30,
+                                        left: 20,
+                                        bottom: 5,
+                                    }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip
+                                        formatter={(value) => `₹${value.toLocaleString()}`}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="Budget" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="Spent" fill="var(--color-danger)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="Revenue" fill="var(--color-success)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </Card>
 

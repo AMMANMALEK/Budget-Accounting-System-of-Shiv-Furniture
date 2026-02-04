@@ -6,6 +6,8 @@ export const AddressGrid = ({ address, onChange }) => {
         onChange({ ...address, [field]: value });
     };
 
+    const safeAddress = address || { street: '', city: '', state: '', country: '', pincode: '' };
+
     return (
         <div className="address-grid-container">
             <h4 className="section-title">Address Details</h4>
@@ -13,7 +15,7 @@ export const AddressGrid = ({ address, onChange }) => {
                 <div className="grid-full">
                     <Input
                         label="Street Address"
-                        value={address.street}
+                        value={safeAddress.street}
                         onChange={(e) => handleChange('street', e.target.value)}
                         placeholder="123 Main St"
                     />
@@ -21,13 +23,13 @@ export const AddressGrid = ({ address, onChange }) => {
                 <div className="grid-half">
                     <Input
                         label="City"
-                        value={address.city}
+                        value={safeAddress.city}
                         onChange={(e) => handleChange('city', e.target.value)}
                         placeholder="New York"
                     />
                     <Input
                         label="State"
-                        value={address.state}
+                        value={safeAddress.state}
                         onChange={(e) => handleChange('state', e.target.value)}
                         placeholder="NY"
                     />
@@ -35,13 +37,13 @@ export const AddressGrid = ({ address, onChange }) => {
                 <div className="grid-half">
                     <Input
                         label="Country"
-                        value={address.country}
+                        value={safeAddress.country}
                         onChange={(e) => handleChange('country', e.target.value)}
                         placeholder="USA"
                     />
                     <Input
                         label="Pincode"
-                        value={address.pincode}
+                        value={safeAddress.pincode}
                         onChange={(e) => handleChange('pincode', e.target.value)}
                         placeholder="10001"
                     />

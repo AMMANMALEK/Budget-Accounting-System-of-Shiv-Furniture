@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useMockData } from '../../context/MockDataContext';
 import { Card } from '../../components/common/Card';
@@ -6,7 +7,12 @@ import { Download, PieChart as PieIcon } from 'lucide-react';
 import './Reports.css';
 
 export const Reports = () => {
+    const [mounted, setMounted] = useState(false);
     const { getBudgetSummary } = useMockData();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     const summary = getBudgetSummary();
 
     const totals = summary.reduce(
@@ -71,7 +77,7 @@ export const Reports = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', marginBottom: '2rem' }}>
                 <Card title="Expense Distribution by Cost Center">
                     <div style={{ height: 300, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                        {pieData.length > 0 ? (
+                        {pieData.length > 0 && mounted ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie

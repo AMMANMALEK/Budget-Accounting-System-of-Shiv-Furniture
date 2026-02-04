@@ -1,0 +1,362 @@
+.pg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.pg-container {
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+}
+
+.pg-card {
+    border-radius: 20px !important;
+    padding: 0 !important;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.pg-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 24px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pg-header-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.pg-amount {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.pg-vendor {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.pg-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 4px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pg-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.pg-content {
+    padding: 24px;
+    min-height: 380px;
+    background: #fdfdfd;
+}
+
+.pg-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pg-method-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 2px solid #f1f3f4;
+    border-radius: 12px;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.pg-method-card:hover {
+    border-color: #1a73e8;
+    background: #f8fbff;
+}
+
+.pg-method-card.active {
+    border-color: #1a73e8;
+    background: #f8fbff;
+}
+
+.pg-method-icon {
+    background: #e8f0fe;
+    color: #1a73e8;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.pg-method-info {
+    flex: 1;
+}
+
+.pg-method-title {
+    display: block;
+    font-weight: 600;
+    font-size: 16px;
+    color: #202124;
+}
+
+.pg-method-desc {
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.pg-chevron {
+    color: #bdc1c6;
+}
+
+/* Card Form Styles */
+.pg-card-preview {
+    background: linear-gradient(135deg, #424242 0%, #212121 100%);
+    width: 100%;
+    height: 180px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    padding: 24px;
+    color: white;
+    position: relative;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.pg-chip {
+    width: 45px;
+    height: 35px;
+    background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+    border-radius: 6px;
+    position: absolute;
+    top: 24px;
+    left: 24px;
+}
+
+.pg-card-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+}
+
+.pg-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.pg-card-holder {
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.pg-card-type {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    font-weight: 900;
+    font-style: italic;
+    opacity: 0.5;
+}
+
+.pg-secure-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    font-size: 12px;
+    color: #5f6368;
+    margin: 16px 0;
+}
+
+.pg-back-link {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: none;
+    border: none;
+    color: #1a73e8;
+    font-size: 14px;
+    margin-top: 16px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.pg-back-link:hover {
+    text-decoration: underline;
+}
+
+/* Status Views */
+.pg-status-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px 0;
+}
+
+.pg-spinner-container {
+    margin-bottom: 24px;
+    color: #1a73e8;
+}
+
+.pg-spinner {
+    animation: pg-spin 1s linear infinite;
+}
+
+@keyframes pg-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.pg-success-icon {
+    margin-bottom: 24px;
+}
+
+.pg-receipt-mini {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    width: 100%;
+    margin: 24px 0;
+}
+
+.receipt-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.receipt-row:last-child {
+    margin-bottom: 0;
+}
+
+.pg-footer {
+    padding: 16px 24px;
+    background: #f1f3f4;
+    border-top: 1px solid #e8eaed;
+}
+
+.pg-trust-logos {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #80868b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.pg-v-m {
+    display: flex;
+    gap: 12px;
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+
+    70% {
+        transform: scale(0.9);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* UPI Specifics */
+.pg-qr-mock {
+    margin-bottom: 24px;
+}
+
+.pg-qr-box {
+    width: 160px;
+    height: 160px;
+    background: white;
+    border: 1px solid #e8eaed;
+    padding: 10px;
+    margin: 0 auto 12px;
+}
+
+.pg-qr-inner {
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 4px 4px;
+    opacity: 0.8;
+}
+
+.pg-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    color: #bdc1c6;
+    font-size: 12px;
+}
+
+.pg-divider::before,
+.pg-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e8eaed;
+}
+
+.pg-divider span {
+    padding: 0 10px;
+}

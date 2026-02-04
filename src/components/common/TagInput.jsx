@@ -10,9 +10,12 @@ export const TagInput = ({ selectedTagIds, onChange, label = "Tags" }) => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const containerRef = useRef(null);
 
-    const selectedTags = tags.filter(t => selectedTagIds.includes(t.id));
-    const availableTags = tags.filter(t =>
-        !selectedTagIds.includes(t.id) &&
+    const safeTags = tags || [];
+    const safeSelectedTagIds = selectedTagIds || [];
+
+    const selectedTags = safeTags.filter(t => safeSelectedTagIds.includes(t.id));
+    const availableTags = safeTags.filter(t =>
+        !safeSelectedTagIds.includes(t.id) &&
         t.label.toLowerCase().includes(inputValue.toLowerCase())
     );
 

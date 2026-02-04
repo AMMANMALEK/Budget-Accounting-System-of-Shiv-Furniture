@@ -7,12 +7,13 @@ import { Badge } from '../../components/common/Badge';
 import { Plus, AlertCircle } from 'lucide-react';
 import './CostCenters.css';
 import './Modal.css';
+import { PaymentGateway } from '../../components/payment/PaymentGateway';
 
 export const VendorBills = () => {
-    const { costCenters, budgets, transactions, addTransaction, updateTransaction, getBudgetSummary } = useMockData();
+    const { contacts, costCenters, budgets, transactions, addTransaction, updateTransaction, getBudgetSummary } = useMockData();
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({
-        vendor: '',
+        vendorId: '',
         costCenterId: '',
         amount: '',
         description: '',
@@ -29,20 +30,18 @@ export const VendorBills = () => {
         vendorName: '',
         amount: 0
     });
-    const [paymentDetails, setPaymentDetails] = useState({
-        date: new Date().toISOString().split('T')[0],
-        method: 'Bank Transfer'
-    });
 
     const bills = transactions.filter(t => t.type === 'bill');
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const billAmount = parseFloat(formData.amount);
+        const selectedVendor = contacts.find(c => c.id === formData.vendorId);
+
         addTransaction({
             type: 'bill',
-            vendor: formData.vendor,
-            customer: null,
+            vendorId: formData.vendorId,
+            vendor: selectedVendor?.name,
             costCenterId: formData.costCenterId,
             amount: billAmount,
             description: formData.description,
@@ -55,26 +54,16 @@ export const VendorBills = () => {
 
             addTransaction({
                 type: 'invoice',
-                vendor: null,
-                customer: formData.billableCustomer,
-                costCenterId: formData.costCenterId,
+                customerId: formData.billableCustomer,
                 amount: invoiceAmount,
                 status: 'unpaid',
                 description: `Reimbursement: ${formData.description}`,
-                items: [
-                    {
-                        id: Date.now(),
-                        description: `Reimbursement: ${formData.description || 'Vendor Bill Expense'}`,
-                        quantity: 1,
-                        rate: invoiceAmount,
-                        tax: 0
-                    }
-                ]
+                costCenterId: formData.costCenterId,
             });
         }
 
         setFormData({
-            vendor: '',
+            vendorId: '',
             costCenterId: '',
             amount: '',
             description: '',
@@ -103,19 +92,15 @@ export const VendorBills = () => {
             vendorName: bill.vendor,
             amount: bill.amount
         });
-        setPaymentDetails({
-            date: new Date().toISOString().split('T')[0],
-            method: 'Bank Transfer'
-        });
     };
 
-    const confirmPayment = (e) => {
-        e.preventDefault();
+    const confirmPayment = (paymentResult) => {
         if (paymentModal.billId) {
             updateTransaction(paymentModal.billId, {
                 status: 'paid',
-                paymentDate: paymentDetails.date,
-                paymentMethod: paymentDetails.method
+                paymentDate: paymentResult.date,
+                paymentMethod: paymentResult.method,
+                transactionId: paymentResult.transactionId
             });
             setPaymentModal({ show: false, billId: null, vendorName: '', amount: 0 });
         }
@@ -172,11 +157,14 @@ export const VendorBills = () => {
                     <h3>New Vendor Bill</h3>
                     <form onSubmit={handleSubmit}>
                         <div className="form-row">
-                            <Input
-                                label="Vendor Name"
-                                value={formData.vendor}
-                                onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                                placeholder="e.g., Google Ads"
+                            <Select
+                                label="Vendor"
+                                value={formData.vendorId}
+                                onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
+                                options={[
+                                    { value: '', label: 'Select a vendor' },
+                                    ...contacts.map(c => ({ value: c.id, label: c.name + (c.contactType === 'VENDOR' ? '' : ` (${c.contactType})`) }))
+                                ]}
                                 required
                             />
                             <Select
@@ -300,46 +288,14 @@ export const VendorBills = () => {
                 </Card>
             )}
 
-            {/* Payment Modal */}
+            {/* Payment Gateway */}
             {paymentModal.show && (
-                <div className="modal-overlay">
-                    <Card className="modal-card">
-                        <h3>Record Payment</h3>
-                        <p className="text-secondary mb-4">
-                            Recording payment of <strong>₹{paymentModal.amount.toLocaleString()}</strong> to <strong>{paymentModal.vendorName}</strong>
-                        </p>
-                        <form onSubmit={confirmPayment}>
-                            <div className="form-row">
-                                <Input
-                                    label="Payment Date"
-                                    type="date"
-                                    value={paymentDetails.date}
-                                    onChange={(e) => setPaymentDetails({ ...paymentDetails, date: e.target.value })}
-                                    required
-                                />
-                                <Select
-                                    label="Payment Method"
-                                    value={paymentDetails.method}
-                                    onChange={(e) => setPaymentDetails({ ...paymentDetails, method: e.target.value })}
-                                    options={[
-                                        { value: 'Bank Transfer', label: 'Bank Transfer' },
-                                        { value: 'Credit Card', label: 'Credit Card' },
-                                        { value: 'Check', label: 'Check' },
-                                        { value: 'Cash', label: 'Cash' },
-                                    ]}
-                                />
-                            </div>
-                            <div className="form-actions mt-6">
-                                <Button type="button" variant="secondary" onClick={() => setPaymentModal({ ...paymentModal, show: false })}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit" variant="success">
-                                    Confirm Payment
-                                </Button>
-                            </div>
-                        </form>
-                    </Card>
-                </div>
+                <PaymentGateway
+                    amount={paymentModal.amount}
+                    vendorName={paymentModal.vendorName}
+                    onConfirm={confirmPayment}
+                    onCancel={() => setPaymentModal({ ...paymentModal, show: false })}
+                />
             )}
 
             <Card>
@@ -371,7 +327,7 @@ export const VendorBills = () => {
                                         <td className="font-medium">₹{bill.amount.toLocaleString()}</td>
                                         <td>
                                             <Badge variant={getStatusColor(bill.status)}>
-                                                {bill.status.toUpperCase()}
+                                                {(bill.status || 'DRAFT').toUpperCase()}
                                             </Badge>
                                         </td>
                                         <td>

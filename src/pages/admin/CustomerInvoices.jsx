@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { jsPDF } from 'jspdf';
 import { useMockData } from '../../context/MockDataContext';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -8,14 +9,15 @@ import { Plus, Trash2, Download } from 'lucide-react';
 import './CostCenters.css';
 
 export const CustomerInvoices = () => {
-    const { costCenters, transactions, addTransaction } = useMockData();
+    const { contacts, costCenters, transactions, addTransaction } = useMockData();
     const [showForm, setShowForm] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
-        customer: '',
+        customerId: '',
         costCenterId: '',
         status: 'unpaid',
+        invoiceDate: new Date().toISOString().split('T')[0],
         description: '', // General note
     });
 
@@ -56,58 +58,118 @@ export const CustomerInvoices = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         const totalAmount = calculateGrandTotal();
+        const selectedCustomer = contacts.find(c => c.id === formData.customerId);
 
         addTransaction({
             type: 'invoice',
-            vendor: null,
-            customer: formData.customer,
+            customerId: formData.customerId,
+            customer: selectedCustomer?.name,
             costCenterId: formData.costCenterId,
-            amount: totalAmount, // Saved for aggregation
-            items: items,        // Saved for detail
+            amount: totalAmount,
+            items: items,
             description: formData.description,
             status: formData.status,
+            date: formData.invoiceDate,
         });
 
         // Reset Form
-        setFormData({ customer: '', costCenterId: '', status: 'unpaid', description: '' });
+        setFormData({
+            customerId: '',
+            costCenterId: '',
+            status: 'unpaid',
+            invoiceDate: new Date().toISOString().split('T')[0],
+            description: ''
+        });
         setItems([{ id: Date.now(), description: '', quantity: 1, rate: 0, tax: 0 }]);
         setShowForm(false);
     };
 
+    const formatDate = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
+    };
+
     const handleDownload = (invoice) => {
+        const doc = new jsPDF();
         const cc = costCenters.find(c => c.id === invoice.costCenterId);
 
-        // Generate Invoice Content
-        const lines = [
-            `INVOICE #${invoice.id.toUpperCase()}`,
-            `----------------------------------------`,
-            `Date: ${new Date(invoice.date).toLocaleDateString()}`,
-            `Customer: ${invoice.customer}`,
-            `Department: ${cc?.name || 'N/A'}`,
-            `Status: ${invoice.status.toUpperCase()}`,
-            `----------------------------------------`,
-            `ITEMS:`,
-            ...(invoice.items || []).map(item =>
-                `- ${item.description} (x${item.quantity}) @ ${item.rate} + ${item.tax}% Tax = ₹${((item.quantity * item.rate) * (1 + item.tax / 100)).toFixed(2)}`
-            ),
-            // Handle legacy invoices without items
-            ...(invoice.items ? [] : [`- Description: ${invoice.description}`]),
-            `----------------------------------------`,
-            `TOTAL AMOUNT: ₹${invoice.amount.toLocaleString()}`,
-            `----------------------------------------`,
-            `Thank you for your business!`
-        ];
+        // Colors
+        const primaryColor = [26, 115, 232];
+        const textColor = [33, 37, 41];
+        const secondaryTextColor = [108, 117, 125];
 
-        const content = lines.join('\n');
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${invoice.id}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(...primaryColor);
+        doc.text('INVOICE', 105, 20, { align: 'center' });
+
+        doc.setFontSize(10);
+        doc.setTextColor(...secondaryTextColor);
+        doc.text(`ID: ${invoice.id.toUpperCase()}`, 105, 28, { align: 'center' });
+
+        // Left Info (Customer)
+        doc.setTextColor(...textColor);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BILL TO:', 20, 45);
+        doc.setFont('helvetica', 'normal');
+        doc.text(invoice.customer || 'Unknown Customer', 20, 52);
+        doc.setFontSize(10);
+        doc.text(`Cost Center: ${cc?.name || 'N/A'} (${cc?.code || 'N/A'})`, 20, 58);
+
+        // Right Info (Invoice Details)
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DETAILS:', 130, 45);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(`Date: ${formatDate(invoice.date)}`, 130, 52);
+        doc.text(`Status: ${invoice.status?.toUpperCase() || 'DRAFT'}`, 130, 58);
+
+        // Table Header
+        let y = 75;
+        doc.setFillColor(248, 249, 250);
+        doc.rect(20, y, 170, 10, 'F');
+        doc.setTextColor(...textColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Description', 25, y + 7);
+        doc.text('Qty', 110, y + 7);
+        doc.text('Rate', 130, y + 7);
+        doc.text('Tax', 155, y + 7);
+        doc.text('Total', 175, y + 7, { align: 'right' });
+
+        // Table Lines
+        doc.setFont('helvetica', 'normal');
+        y += 15;
+        (invoice.items || []).forEach((item) => {
+            const lineTotal = (item.quantity * item.rate) * (1 + (item.tax || 0) / 100);
+            doc.text(item.description || 'Service/Product', 25, y);
+            doc.text(item.quantity.toString(), 110, y);
+            doc.text(`INR ${item.rate.toLocaleString()}`, 130, y);
+            doc.text(`${item.tax}%`, 155, y);
+            doc.text(`INR ${lineTotal.toLocaleString()}`, 175, y, { align: 'right' });
+            y += 10;
+        });
+
+        // Totals
+        y += 10;
+        doc.setDrawColor(222, 226, 230);
+        doc.line(20, y, 190, y);
+        y += 10;
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GRAND TOTAL:', 130, y);
+        doc.setTextColor(...primaryColor);
+        doc.text(`INR ${invoice.amount.toLocaleString()}`, 190, y, { align: 'right' });
+
+        // Footer
+        doc.setTextColor(...secondaryTextColor);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Thank you for your business!', 105, 270, { align: 'center' });
+
+        doc.save(`Invoice_${invoice.id.substring(0, 8)}.pdf`);
     };
 
     return (
@@ -129,11 +191,14 @@ export const CustomerInvoices = () => {
                     <form onSubmit={handleSubmit}>
                         {/* Header Fields */}
                         <div className="form-row">
-                            <Input
-                                label="Customer Name"
-                                value={formData.customer}
-                                onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
-                                placeholder="e.g., Acme Corp"
+                            <Select
+                                label="Customer"
+                                value={formData.customerId}
+                                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                                options={[
+                                    { value: '', label: 'Select a customer' },
+                                    ...contacts.map(c => ({ value: c.id, label: c.name + (c.contactType === 'CUSTOMER' ? '' : ` (${c.contactType})`) }))
+                                ]}
                                 required
                             />
                             <Select
@@ -154,9 +219,16 @@ export const CustomerInvoices = () => {
                                     { value: 'unpaid', label: 'Unpaid' },
                                     { value: 'paid', label: 'Paid' },
                                 ]}
+                                required
+                            />
+                            <Input
+                                label="Invoice Date"
+                                type="date"
+                                value={formData.invoiceDate}
+                                onChange={(e) => setFormData({ ...formData, invoiceDate: e.target.value })}
+                                required
                             />
                         </div>
-
                         {/* Line Items */}
                         <div className="invoice-items-section">
                             <h4>Items</h4>
@@ -208,7 +280,7 @@ export const CustomerInvoices = () => {
                                                     />
                                                 </td>
                                                 <td className="text-right font-medium">
-                                                    ₹${calculateLineTotal(item).toLocaleString()}
+                                                    ₹{calculateLineTotal(item).toLocaleString()}
                                                 </td>
                                                 <td className="text-center">
                                                     <Button
@@ -234,7 +306,7 @@ export const CustomerInvoices = () => {
                         <div className="invoice-footer mt-4">
                             <div className="invoice-total">
                                 <span>Grand Total:</span>
-                                <strong>₹${calculateGrandTotal().toLocaleString()}</strong>
+                                <strong>₹{calculateGrandTotal().toLocaleString()}</strong>
                             </div>
                             <Textarea
                                 label="Notes"
@@ -289,7 +361,7 @@ export const CustomerInvoices = () => {
                                         </td>
                                         <td>
                                             <Badge variant={invoice.status === 'paid' ? 'success' : 'warning'}>
-                                                {invoice.status.toUpperCase()}
+                                                {(invoice.status || 'UNPAID').toUpperCase()}
                                             </Badge>
                                         </td>
                                         <td>

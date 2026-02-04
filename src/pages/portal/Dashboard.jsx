@@ -2,7 +2,7 @@ import { useMockData } from '../../context/MockDataContext';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
-import { FileText, IndianRupee, AlertCircle, Clock } from 'lucide-react';
+import { FileText, IndianRupee, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import './PortalDashboard.css';
 
 export const PortalDashboard = () => {

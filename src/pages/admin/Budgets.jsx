@@ -91,12 +91,10 @@ export const Budgets = () => {
                             <div className="budget-card-header">
                                 <div>
                                     <h3>{cc.name}</h3>
-                                    <div className="budget-icon"><IndianRupee size={20} /></div>
                                 </div>
                                 <span className="badge badge-primary">FY 2026</span>
                             </div>
                             <div className="budget-card-amount">
-                                <IndianRupee size={32} className="budget-icon" />
                                 <div className="budget-value">
                                     {budget ? `₹${budget.amount.toLocaleString()}` : 'Not Set'}
                                 </div>

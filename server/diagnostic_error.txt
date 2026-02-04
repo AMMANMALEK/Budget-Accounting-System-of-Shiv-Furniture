@@ -1,0 +1,16 @@
+PrismaClientInitializationError: 
+Invalid `prisma.contact.findMany()` invocation in
+C:\Users\AMMAN MALEK\OneDrive\Desktop\Budget_mvp\server\diagnostic.js:8:47
+
+  5 const prisma = new PrismaClient();
+  6 try {
+  7     console.log('Fetching contacts...');
+→ 8     const contacts = await prisma.contact.findMany(
+Can't reach database server at `ep-small-meadow-a1jpew18.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-small-meadow-a1jpew18.ap-southeast-1.aws.neon.tech:5432`.
+    at ei.handleRequestError (C:\Users\AMMAN MALEK\OneDrive\Desktop\Budget_mvp\server\node_modules\@prisma\client\runtime\library.js:121:7568)
+    at ei.handleAndLogRequestError (C:\Users\AMMAN MALEK\OneDrive\Desktop\Budget_mvp\server\node_modules\@prisma\client\runtime\library.js:121:6593)
+    at ei.request (C:\Users\AMMAN MALEK\OneDrive\Desktop\Budget_mvp\server\node_modules\@prisma\client\runtime\library.js:121:6300)
+    at async a (C:\Users\AMMAN MALEK\OneDrive\Desktop\Budget_mvp\server\node_modules\@prisma\client\runtime\library.js:130:9551)
+    at async check (C:\Users\AMMAN MALEK\OneDrive\Desktop\Budget_mvp\server\diagnostic.js:8:26)

@@ -4,6 +4,7 @@ import { useMockData } from '../../../context/MockDataContext';
 import { Card } from '../../../components/common/Card';
 import { Button } from '../../../components/common/Button';
 import { Input } from '../../../components/common/Input';
+import { Badge } from '../../../components/common/Badge';
 import { Plus, Search, User, Phone, Mail, Tag } from 'lucide-react';
 import './ContactList.css';
 
@@ -12,15 +13,16 @@ export const ContactList = () => {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const activeContacts = contacts.filter(c => !c.isArchived);
+    const activeContacts = contacts.filter(c => c.active !== false);
     const filteredContacts = activeContacts.filter(contact =>
         contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.phone.toString().includes(searchTerm)
     );
 
-    const getTags = (tagIds) => {
-        return tags.filter(tag => tagIds.includes(tag.id));
+    const getTags = (tagIds = []) => {
+        if (!tags || !Array.isArray(tags)) return [];
+        return tags.filter(tag => tagIds && tagIds.includes(tag.id));
     };
 
     return (
@@ -54,6 +56,7 @@ export const ContactList = () => {
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Type</th>
                                 <th>Contact Info</th>
                                 <th>Tags</th>
                                 <th>Location</th>
@@ -77,6 +80,11 @@ export const ContactList = () => {
                                             </div>
                                             <span className="font-medium">{contact.name}</span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <Badge variant={contact.contactType === 'CUSTOMER' ? 'success' : contact.contactType === 'VENDOR' ? 'primary' : 'secondary'}>
+                                            {contact.contactType}
+                                        </Badge>
                                     </td>
                                     <td>
                                         <div className="contact-info-cell">
@@ -104,7 +112,7 @@ export const ContactList = () => {
                                         </div>
                                     </td>
                                     <td className="text-secondary">
-                                        {contact.address.city}, {contact.address.state}
+                                        {contact.address?.city ? `${contact.address.city}, ${contact.address.state || ''}` : 'No address provided'}
                                     </td>
                                 </tr>
                             ))}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { fetchApi } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -14,46 +15,56 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const mapUser = (u) => ({
+    ...u,
+    role: u.role?.toLowerCase() // Map ADMIN -> admin, PORTAL -> portal
+  });
+
   useEffect(() => {
-    // Check localStorage for existing session
-    const storedUser = localStorage.getItem('erp_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('erp_token');
+      if (token) {
+        try {
+          const data = await fetchApi('/auth/me');
+          setUser(mapUser(data.user));
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          localStorage.removeItem('erp_token');
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+    checkAuth();
   }, []);
 
-  const login = (name, email, password, role) => {
-    // Mock authentication - accept any credentials
-    const userData = {
-      id: role === 'admin' ? 'admin-1' : 'portal-1',
-      email,
-      role, // 'admin' or 'portal'
-      name: name || (role === 'admin' ? 'Admin User' : 'Portal User'),
-    };
+  const login = async (email, password, role) => {
+    const data = await fetchApi('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
 
-    setUser(userData);
-    localStorage.setItem('erp_user', JSON.stringify(userData));
-    return userData;
+    const mappedUser = mapUser(data.user);
+    setUser(mappedUser);
+    localStorage.setItem('erp_token', data.token);
+    return mappedUser;
   };
 
-  const signup = (name, email, password, role) => {
-    // Mock signup
-    const userData = {
-      id: `${role}-${Date.now()}`,
-      email,
-      role,
-      name,
-    };
+  const signup = async (name, email, password, role) => {
+    const data = await fetchApi('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password, role })
+    });
 
-    setUser(userData);
-    localStorage.setItem('erp_user', JSON.stringify(userData));
-    return userData;
+    const mappedUser = mapUser(data.user);
+    setUser(mappedUser);
+    localStorage.setItem('erp_token', data.token);
+    return mappedUser;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('erp_user');
+    localStorage.removeItem('erp_token');
   };
 
   const value = {
@@ -66,5 +77,5 @@ export const AuthProvider = ({ children }) => {
     isPortal: user?.role === 'portal',
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };

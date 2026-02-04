@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { fetchApi } from '../utils/api';
 
 const MockDataContext = createContext(null);
 
@@ -10,293 +11,246 @@ export const useMockData = () => {
     return context;
 };
 
-// Initial mock data
-const initialData = {
-    costCenters: [
-        { id: 'cc-1', name: 'Marketing', code: 'MKT', description: 'Marketing and advertising expenses', status: 'active' },
-        { id: 'cc-2', name: 'Operations', code: 'OPS', description: 'Operational costs' },
-        { id: 'cc-3', name: 'IT & Technology', code: 'IT', description: 'Technology infrastructure' },
-        { id: 'cc-4', name: 'Human Resources', code: 'HR', description: 'Recruitment and employee relations' },
-        { id: 'cc-5', name: 'Sales & Business Dev', code: 'SALES', description: 'Sales commissions and tools' },
-        { id: 'cc-6', name: 'Research & Development', code: 'R&D', description: 'Product development and innovation' },
-        { id: 'cc-7', name: 'Finance & Legal', code: 'FIN', description: 'Accounting, audit, and legal fees' },
-        { id: 'cc-8', name: 'Logistics', code: 'LOG', description: 'Shipping and supply chain' },
-        { id: 'cc-9', name: 'Customer Support', code: 'CS', description: 'Support tools and personnel' },
-        { id: 'cc-10', name: 'Facilities', code: 'FAC', description: 'Office rent and utilities', status: 'pending' },
-    ],
-    budgets: [
-        { id: 'b-1', costCenterId: 'cc-1', amount: 50000, fiscalYear: '2026' },
-        { id: 'b-2', costCenterId: 'cc-2', amount: 120000, fiscalYear: '2026' },
-        { id: 'b-3', costCenterId: 'cc-3', amount: 80000, fiscalYear: '2026' },
-    ],
-    transactions: [
-        {
-            id: 't-1',
-            type: 'bill',
-            costCenterId: 'cc-1',
-            vendor: 'Google Ads',
-            customer: null,
-            amount: 5000,
-            date: '2026-01-15',
-            status: 'paid',
-            description: 'Q1 Advertising Campaign',
-        },
-        {
-            id: 't-2',
-            type: 'bill',
-            costCenterId: 'cc-3',
-            vendor: 'AWS',
-            customer: null,
-            amount: 3200,
-            date: '2026-01-20',
-            status: 'paid',
-            description: 'Cloud hosting January',
-        },
-        {
-            id: 't-3',
-            type: 'invoice',
-            costCenterId: 'cc-2',
-            vendor: null,
-            customer: 'Acme Corp',
-            amount: 15000,
-            date: '2026-01-25',
-            status: 'unpaid',
-            description: 'Consulting services',
-        },
-        {
-            id: 't-4',
-            type: 'invoice',
-            costCenterId: 'cc-2',
-            vendor: null,
-            customer: 'Tech Solutions Inc',
-            amount: 8500,
-            date: '2026-01-28',
-            status: 'paid',
-            description: 'Software development',
-        },
-    ],
-    contacts: [
-        {
-            id: 'contact-1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            phone: 1234567890,
-            image: null,
-            address: {
-                street: '123 Main St',
-                city: 'New York',
-                state: 'NY',
-                country: 'USA',
-                pincode: '10001'
-            },
-            tagIds: ['tag-1'],
-            isArchived: false,
-        }
-    ],
-    tags: [
-        { id: 'tag-1', label: 'Vendor', color: '#3b82f6' },
-        { id: 'tag-2', label: 'Customer', color: '#10b981' },
-    ],
-};
+const DEFAULT_TAGS = [
+    { id: '1', label: 'VIP', color: '#7c3aed' },
+    { id: '2', label: 'Vendor', color: '#2563eb' },
+    { id: '3', label: 'Urgent', color: '#dc2626' },
+    { id: '4', label: 'New', color: '#059669' },
+];
 
 export const MockDataProvider = ({ children }) => {
-    const [data, setData] = useState(() => {
-        // Load from localStorage or use initial data
-        const stored = localStorage.getItem('erp_data');
-        if (stored) {
-            const parsed = JSON.parse(stored);
+    const [costCenters, setCostCenters] = useState([]);
+    const [budgets, setBudgets] = useState([]);
+    const [transactions, setTransactions] = useState([]);
+    const [contacts, setContacts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-            // Merge initial cost centers with stored ones (avoiding duplicates by ID)
-            const storedCCIds = new Set(parsed.costCenters.map(cc => cc.id));
-            const newCCs = initialData.costCenters.filter(cc => !storedCCIds.has(cc.id));
-            const mergedCostCenters = [...parsed.costCenters, ...newCCs];
+    const refreshData = useCallback(async () => {
+        try {
+            const [ccs, budgs, trans, conts] = await Promise.all([
+                fetchApi('/cost-centers'),
+                fetchApi('/budgets'),
+                fetchApi('/transactions'),
+                fetchApi('/contacts')
+            ]);
 
-            // Ensure new schema fields exist by merging with initialData
-            return {
-                ...initialData,
-                ...parsed,
-                costCenters: mergedCostCenters.map(cc => ({
-                    ...cc,
-                    status: cc.status || 'active'
-                })),
-                contacts: parsed.contacts || initialData.contacts,
-                tags: parsed.tags || initialData.tags
-            };
+            // Normalize contacts (ensure address object exists even if DB is flat)
+            const normalizedContacts = (conts || []).map(c => ({
+                ...c,
+                name: c.name || c.email || 'Unnamed Contact',
+                contactType: c.contactType?.toUpperCase() || 'VENDOR',
+                address: {
+                    street: c.address || '', // The 'address' string field in DB is used as street
+                    city: c.city || '',
+                    state: c.state || '',
+                    country: c.country || '',
+                    pincode: c.pincode || ''
+                }
+            }));
+
+            setCostCenters(ccs);
+
+            // Normalize budgets
+            const normalizedBudgets = (budgs || []).map(b => ({
+                ...b,
+                costCenterId: b.analyticAccountId,
+                amount: Number(b.lines?.[0]?.plannedAmount || 0),
+                fiscalYear: b.dateFrom ? new Date(b.dateFrom).getFullYear().toString() : '2026'
+            }));
+            setBudgets(normalizedBudgets);
+
+            const combinedTrans = [
+                ...(trans.invoices || []).map(i => {
+                    const customer = normalizedContacts.find(c => c.id === i.customerId);
+                    const items = (i.lines || []).map(l => ({
+                        ...l,
+                        rate: Number(l.price || 0),
+                        tax: Number(l.tax || 0),
+                        description: l.description || l.product?.name || 'Service Item'
+                    }));
+                    const totalAmount = i.amount || items.reduce((sum, item) => sum + (Number(item.rate) * Number(item.quantity)), 0);
+                    return {
+                        ...i,
+                        type: 'invoice',
+                        date: i.invoiceDate || i.date,
+                        items: items,
+                        amount: Number(totalAmount || 0),
+                        status: i.state?.toLowerCase() || 'unpaid',
+                        customer: customer?.name || 'Unknown Customer',
+                        costCenterId: i.lines?.[0]?.analyticAccountId
+                    };
+                }),
+                ...(trans.bills || []).map(b => {
+                    const vendor = normalizedContacts.find(c => c.id === b.vendor_id);
+                    return {
+                        ...b,
+                        type: 'bill',
+                        amount: Number(b.amount || 0),
+                        vendor: vendor?.name || 'Unknown Vendor',
+                        analyticAccountId: b.purchase_orders?.analytic_account_id
+                    };
+                })
+            ];
+
+            setTransactions(combinedTrans);
+            setContacts(normalizedContacts);
+        } catch (error) {
+            console.error('Failed to fetch data:', error);
+        } finally {
+            setLoading(false);
         }
-        return initialData;
-    });
+    }, []);
 
-    // Persist to localStorage whenever data changes
     useEffect(() => {
-        localStorage.setItem('erp_data', JSON.stringify(data));
-    }, [data]);
+        refreshData();
+    }, [refreshData]);
 
     // Cost Center operations
-    const addCostCenter = (costCenter) => {
-        const newCostCenter = {
-            ...costCenter,
-            id: `cc-${Date.now()}`,
-            status: costCenter.status || 'pending',
-        };
-        setData(prev => ({
-            ...prev,
-            costCenters: [...prev.costCenters, newCostCenter],
-        }));
-        return newCostCenter;
+    const addCostCenter = async (costCenter) => {
+        const data = await fetchApi('/cost-centers', {
+            method: 'POST',
+            body: JSON.stringify(costCenter)
+        });
+        await refreshData();
+        return data;
     };
 
-    const updateCostCenter = (id, updates) => {
-        setData(prev => ({
-            ...prev,
-            costCenters: prev.costCenters.map(cc =>
-                cc.id === id ? { ...cc, ...updates } : cc
-            ),
-        }));
+    const updateCostCenter = async (id, updates) => {
+        await fetchApi(`/cost-centers/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        });
+        await refreshData();
     };
 
-    const deleteCostCenter = (id) => {
-        setData(prev => ({
-            ...prev,
-            costCenters: prev.costCenters.filter(cc => cc.id !== id),
-            budgets: prev.budgets.filter(b => b.costCenterId !== id),
-            transactions: prev.transactions.filter(t => t.costCenterId !== id),
-        }));
+    const deleteCostCenter = async (id) => {
+        await fetchApi(`/cost-centers/${id}`, {
+            method: 'DELETE'
+        });
+        await refreshData();
     };
 
     // Budget operations
-    const setBudget = (costCenterId, amount, fiscalYear = '2026') => {
-        const existing = data.budgets.find(
-            b => b.costCenterId === costCenterId && b.fiscalYear === fiscalYear
-        );
-
-        if (existing) {
-            setData(prev => ({
-                ...prev,
-                budgets: prev.budgets.map(b =>
-                    b.id === existing.id ? { ...b, amount } : b
-                ),
-            }));
-        } else {
-            const newBudget = {
-                id: `b-${Date.now()}`,
-                costCenterId,
-                amount,
-                fiscalYear,
-            };
-            setData(prev => ({
-                ...prev,
-                budgets: [...prev.budgets, newBudget],
-            }));
-        }
+    const setBudget = async (costCenterId, amount, fiscalYear = '2026') => {
+        await fetchApi('/budgets', {
+            method: 'POST',
+            body: JSON.stringify({ analyticAccountId: costCenterId, amount, fiscalYear })
+        });
+        await refreshData();
     };
 
     // Transaction operations
-    const addTransaction = (transaction) => {
-        const newTransaction = {
-            ...transaction,
-            id: `t-${Date.now()}`,
-            date: transaction.date || new Date().toISOString().split('T')[0],
-            status: transaction.status || 'draft',
-        };
-        setData(prev => ({
-            ...prev,
-            transactions: [...prev.transactions, newTransaction],
-        }));
-        return newTransaction;
+    const addTransaction = async (transaction) => {
+        // Validation: Ensure we have required IDs
+        if (transaction.type === 'invoice' && (!transaction.customerId || !transaction.costCenterId)) {
+            throw new Error('Please select both a customer and a cost center.');
+        }
+        if (transaction.type === 'bill' && !transaction.vendorId) {
+            throw new Error('Please select a vendor.');
+        }
+
+        const endpoint = transaction.type === 'bill' ? '/transactions/bill' : '/transactions/invoice';
+        const body = transaction.type === 'bill'
+            ? {
+                vendorId: transaction.vendorId,
+                amount: Number(transaction.amount || 0),
+                billNumber: transaction.billNumber || `BILL-${Date.now()}`,
+                date: transaction.date || new Date().toISOString(),
+                status: transaction.status,
+                description: transaction.description
+            }
+            : {
+                customerId: transaction.customerId,
+                invoiceDate: transaction.date || new Date().toISOString(),
+                state: transaction.status === 'paid' ? 'PAID' : 'DRAFT',
+                description: transaction.description,
+                lines: (transaction.items || []).map(item => ({
+                    productId: 'f8d38e78-fcd1-432d-83b6-200388d77685', // Default standard product
+                    description: item.description,
+                    quantity: Number(item.quantity || 1),
+                    price: Number(item.rate || 0),
+                    tax: Number(item.tax || 0),
+                    analyticAccountId: transaction.costCenterId
+                }))
+            };
+
+        const data = await fetchApi(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        await refreshData();
+        return data;
     };
 
-    const updateTransaction = (id, updates) => {
-        setData(prev => ({
-            ...prev,
-            transactions: prev.transactions.map(t =>
-                t.id === id ? { ...t, ...updates } : t
-            ),
-        }));
-    };
-
-    const deleteTransaction = (id) => {
-        setData(prev => ({
-            ...prev,
-            transactions: prev.transactions.filter(t => t.id !== id),
-        }));
+    const updateTransaction = async (id, updates) => {
+        // Specifically for bill status updates
+        if (updates.status) {
+            await fetchApi(`/transactions/bill/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: updates.status })
+            });
+            await refreshData();
+        }
     };
 
     // Contact operations
-    const addContact = (contact) => {
-        // Validation: Email uniqueness
-        if (data.contacts.some(c => c.email === contact.email)) {
-            throw new Error('Email must be unique');
-        }
-
-        const newContact = {
-            ...contact,
-            id: `contact-${Date.now()}`,
-            isArchived: false,
-        };
-        setData(prev => ({
-            ...prev,
-            contacts: [...prev.contacts, newContact],
-        }));
-        return newContact;
+    const addContact = async (contact) => {
+        const data = await fetchApi('/contacts', {
+            method: 'POST',
+            body: JSON.stringify(contact)
+        });
+        await refreshData();
+        return data;
     };
 
-    const updateContact = (id, updates) => {
-        // Validation: Email uniqueness (if email is changing)
-        if (updates.email && data.contacts.some(c => c.email === updates.email && c.id !== id)) {
-            throw new Error('Email must be unique');
-        }
-
-        setData(prev => ({
-            ...prev,
-            contacts: prev.contacts.map(c =>
-                c.id === id ? { ...c, ...updates } : c
-            ),
-        }));
+    const updateContact = async (id, updates) => {
+        await fetchApi(`/contacts/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        });
+        await refreshData();
     };
 
-    const deleteContact = (id) => {
-        // Soft delete (Archive)
-        updateContact(id, { isArchived: true });
+    const deleteContact = async (id) => {
+        // Soft delete (active: false)
+        await updateContact(id, { active: false });
     };
 
-    const restoreContact = (id) => {
-        updateContact(id, { isArchived: false });
+    const restoreContact = async (id) => {
+        await updateContact(id, { active: true });
     };
 
-    // Tag operations
     const addTag = (label) => {
-        const existing = data.tags.find(t => t.label.toLowerCase() === label.toLowerCase());
-        if (existing) return existing;
-
         const newTag = {
-            id: `tag-${Date.now()}`,
+            id: Date.now().toString(),
             label,
-            color: `#${Math.floor(Math.random() * 16777215).toString(16)}`, // Random color
+            color: '#' + Math.floor(Math.random() * 16777215).toString(16)
         };
-        setData(prev => ({
-            ...prev,
-            tags: [...prev.tags, newTag],
-        }));
+        // In a real app we'd save this to backend. For now we just return it
+        // since tags are currently just DEFAULT_TAGS constant.
         return newTag;
     };
 
-    // Computed values
+    // Computed values (simulated locally for now)
     const getBudgetSummary = () => {
-        const summary = data.costCenters.map(cc => {
-            const budget = data.budgets.find(b => b.costCenterId === cc.id);
-            const transactions = data.transactions.filter(t => t.costCenterId === cc.id);
+        return costCenters.map(cc => {
+            const budgetData = budgets.find(b => b.analyticAccountId === cc.id);
 
-            const spent = transactions
-                .filter(t => t.type === 'bill' && t.status !== 'draft')
-                .reduce((sum, t) => sum + t.amount, 0);
+            // Filter transactions that belong to this cost center
+            const ccTrans = transactions.filter(t => t.analyticAccountId === cc.id);
 
-            const revenue = transactions
+            const spent = ccTrans
+                .filter(t => t.type === 'bill' && t.status !== 'draft' && t.status !== 'rejected')
+                .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+            const revenue = ccTrans
                 .filter(t => t.type === 'invoice')
-                .reduce((sum, t) => sum + t.amount, 0);
+                .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-            const budgetAmount = budget?.amount || 0;
+            const budgetAmount = Number(budgetData?.lines?.[0]?.plannedAmount || 0);
+
+            // Core math logic
             const remaining = budgetAmount - spent;
-            const variance = remaining;
 
             return {
                 costCenter: cc,
@@ -304,12 +258,10 @@ export const MockDataProvider = ({ children }) => {
                 spent,
                 revenue,
                 remaining,
-                variance,
+                variance: remaining,
                 percentUsed: budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0,
             };
         });
-
-        return summary;
     };
 
     const getTotalSummary = () => {
@@ -323,34 +275,23 @@ export const MockDataProvider = ({ children }) => {
     };
 
     const value = {
-        // Data
-        costCenters: data.costCenters,
-        budgets: data.budgets,
-        transactions: data.transactions,
-        contacts: data.contacts,
-        tags: data.tags,
-
-        // Contact operations
+        costCenters,
+        budgets,
+        transactions,
+        contacts,
+        tags: DEFAULT_TAGS,
+        loading,
         addContact,
         updateContact,
         deleteContact,
         restoreContact,
         addTag,
-
-        // Cost Center operations
         addCostCenter,
         updateCostCenter,
         deleteCostCenter,
-
-        // Budget operations
         setBudget,
-
-        // Transaction operations
         addTransaction,
         updateTransaction,
-        deleteTransaction,
-
-        // Computed
         getBudgetSummary,
         getTotalSummary,
     };

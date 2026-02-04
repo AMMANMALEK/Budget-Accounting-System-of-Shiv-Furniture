@@ -7,22 +7,27 @@ import { IndianRupee } from 'lucide-react';
 import './Login.css';
 
 export const Login = () => {
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('admin');
+    const [error, setError] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        login(name, email, password, role);
+        setError('');
+        try {
+            const user = await login(email, password, role);
 
-        // Redirect based on role
-        if (role === 'admin') {
-            navigate('/admin/dashboard');
-        } else {
-            navigate('/portal/dashboard');
+            // Redirect based on role
+            if (user.role === 'admin') {
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/portal/dashboard');
+            }
+        } catch (err) {
+            setError(err.message || 'Login failed. Please check your credentials.');
         }
     };
 
@@ -38,14 +43,7 @@ export const Login = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <Input
-                        label="Full Name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Amman Malek"
-                        required
-                    />
+                    {error && <div className="auth-error-message" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
 
                     <Input
                         label="Email Address"

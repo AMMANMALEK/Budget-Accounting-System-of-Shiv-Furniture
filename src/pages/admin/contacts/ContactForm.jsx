@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMockData } from '../../../context/MockDataContext';
 import { Card } from '../../../components/common/Card';
 import { Button } from '../../../components/common/Button';
-import { Input } from '../../../components/common/Input';
+import { Input, Select } from '../../../components/common/Input';
 import { ImageUpload } from '../../../components/common/ImageUpload';
 import { TagInput } from '../../../components/common/TagInput';
 import { AddressGrid } from '../../../components/contacts/AddressGrid';
@@ -28,7 +28,8 @@ export const ContactForm = () => {
             country: '',
             pincode: ''
         },
-        tagIds: []
+        tagIds: [],
+        contactType: 'VENDOR'
     });
 
     const [error, setError] = useState('');
@@ -37,7 +38,16 @@ export const ContactForm = () => {
         if (!isNew) {
             const contact = contacts.find(c => c.id === id);
             if (contact) {
-                setFormData(contact);
+                setFormData({
+                    ...contact,
+                    address: contact.address || {
+                        street: '',
+                        city: '',
+                        state: '',
+                        country: '',
+                        pincode: ''
+                    }
+                });
             } else {
                 navigate('/admin/contacts');
             }
@@ -160,6 +170,17 @@ export const ContactForm = () => {
                                 placeholder="john@example.com"
                                 required
                                 type="email"
+                            />
+                            <Select
+                                label="Contact Type"
+                                value={formData.contactType}
+                                onChange={(e) => handleChange('contactType', e.target.value)}
+                                options={[
+                                    { value: 'VENDOR', label: 'Vendor' },
+                                    { value: 'CUSTOMER', label: 'Customer' },
+                                    { value: 'ALL', label: 'Internal/Both' },
+                                ]}
+                                required
                             />
                         </div>
                     </Card>
